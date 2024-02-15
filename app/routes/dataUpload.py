@@ -1,9 +1,9 @@
 '''
-1.) Upload Enpoint:
+1.) Upload Endpoint:
     Endpoint: '/upload'
     Method: POST
     Authentication Required: Yes
-    Description: Allows a user to upload image files for a project. Allow multiple filaes at once?
+    Description: Allows a user to upload image files for a project. Allow multiple files at once?
     Request Body: Multipart/form-data containing the images.
     Response: JSON object with the status of the upload and references to the uploaded images/
 
