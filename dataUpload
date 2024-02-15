@@ -1,0 +1,23 @@
+'''
+1.) Upload Enpoint:
+    Endpoint: '/upload'
+    Method: POST
+    Authentication Required: Yes
+    Description: Allows a user to upload image files for a project. Allow multiple filaes at once?
+    Request Body: Multipart/form-data containing the images.
+    Response: JSON object with the status of the upload and references to the uploaded images/
+
+2.) List Uploaded Files Endpoint:
+    Endpoint: /files
+    Method: GET
+    Authentication Required: Yes
+    Description: Lists all the files uploaded by the user for a project.
+    Response: JSON list of files with metadata (e.g., file names, upload dates, sizes).
+
+3.) Delete File Endpoint:
+    Endpoint: /files/{file_id}
+    Method: DELETE
+    Authentication Required: Yes
+    Description: Deletes a specified file from the project's dataset.
+    Response: JSON object with the status of the deletion.
+'''

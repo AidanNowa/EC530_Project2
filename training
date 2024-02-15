@@ -1,0 +1,23 @@
+'''
+1.) Start Training Endpoint:
+    Endpoint: /train
+    Method: POST
+    Authentication Required: Yes
+    Description: Initiates the training process for a user's project with the selected model and parameters.
+    Request Body: JSON object containing the model selection, training parameters (like epochs, batch size, etc.), and references to the dataset.
+    Response: JSON object with the training job's status and a unique training job ID.
+
+2.) Training Status Endpoint:
+    Endpoint: /train/status/{job_id}
+    Method: GET
+    Authentication Required: Yes
+    Description: Retrieves the status of a specific training job.
+    Response: JSON object with details about the training job's progress, such as current epoch, loss, accuracy, etc.   
+
+3.) Abort Training Endpoint: 
+    Endpoint: /train/{job_id}
+    Method: DELETE
+    Authentication Required: Yes
+    Description: Aborts a running training job.
+    Response: JSON object with the status of the operation.
+'''
