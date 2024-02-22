@@ -37,7 +37,7 @@ Function takes a list of files as input
 Utilizes FasAPIs file upload handling
 Returns a JSON object with the filenames of the uploaded files -- placeholder
 '''
-@router.post("/") # decorator to specify this is a POST endpointat the parth `/upload/`
+@router.post("/") # decorator to specify this is a POST endpoint at the path `/upload/`
 async def uploads_files(files: List[UploadFile] = File(...)):
     #TODO: file upload logic
     return {"filenames": [file.filename for file in files]}
