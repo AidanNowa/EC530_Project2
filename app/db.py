@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 from datetime import datetime
+import uuid
 
 # Load environment variables
 load_dotenv()
@@ -17,25 +18,45 @@ db = client.DIY_ML
 
 # USelect collections
 users_collection = db.users
-files_collection = db.files
+#files_collection = db.files
+images_collection = db.images
 inferences_collection = db.inferences
 models_collection = db.models
 reports_collection = db.reports
 test_results_collection = db.test_results
 training_jobs_collection = db.training_jobs
 
+# make userId, modelId and datasetType fields indexable
+users_collection.create_index([("userId", 1)], unique=True)
+inferences_collection.create_index([("modelId", 1)], unique=True)
+models_collection.create_index([("userId", 1)], unique=True)
+images_collection.create_index([("userId", 1), ("datasetType"), 1])
+
 #Insert a new user
-def create_user(username, email, hashed_password):
-    user = {
-        "username": username,
+def create_user(name, email, hashed_password):
+    user_doc = {
+        "userId": str(uuid.uuid4()),
+        "name": name,
         "email": email,
         "passwordHash": hashed_password,
         "createdAt": datetime.now(),
+        "deletedAt": None, #remain as None until deleted
     }
-    return users_collection.insert_one(user).inserted_id
+    return users_collection.insert_one(user_doc).inserted_id
+
+#Soft delete a suer by setting the deletedAt field
+def soft_delete_user(email):
+    return users_collection.update_one(
+        {"email": email},
+        {"$set": {"deletedAt": datetime.now()}}
+    )
+
+#get active users only
+def get_active_users():
+    return list(users_collection.find({"deletedAt": None}))
 
 # Insert a new file
-def create_file(user_id, file_name, file_path):
+""" def create_file(user_id, file_name, file_path):
     file_doc = {
         "userId": user_id,
         "fileName": file_name,
@@ -46,7 +67,49 @@ def create_file(user_id, file_name, file_path):
 
 # Retrieve files for a user
 def get_files_by_user(user_id):
-    return list(files_collection.find({"userId": user_id}))
+    return list(files_collection.find({"userId": user_id})) """
+
+
+
+
+'''
+Example of how to add file and view images
+# Insert a sample image into the database
+image_id = insert_image(
+    userId="user123",
+    filePath="path/to/image.jpg",
+    datasetType="training",
+    label="dog",
+    polygons=[[10, 10], [100, 10], [100, 100], [10, 100]],
+    additionalInfo="Sample image of a dog"
+)
+print(f"Inserted image ID: {image_id}")
+
+# Retrieve and print all training images for a specific user
+training_images = get_images("user123", "training")
+for img in training_images:
+    print(img)
+
+'''
+#insert a new image document
+def insert_image(userId, filePath, datasetType, label, polygons, additionalInfo=None):
+    image_doc = {
+        "userId": userId,
+        "createdAt": datetime.now(),
+        "filePath": filePath,
+        "datasetType": datasetType,
+        "metadata": {
+            "label": label,
+            "polygons": polygons,
+            "additionalInfo": additionalInfo
+        }
+    }
+    return images_collection.insert_one(image_doc).inserted_id
+
+
+# Function to retrieve images by user and dataset type
+def get_images(userId, datasetType):
+    return list(images_collection.find({"userId": userId, "datasetType": datasetType}))
 
 # Insert a new inference
 def create_inference(model_id, input_file_id, result):
@@ -63,10 +126,11 @@ def get_inferences_by_model(model_id):
     return list(inferences_collection.find({"modelId": model_id}))
 
 # Insert a new model
-def create_model(user_id, model_type, status):
+def create_model(user_id, model_type, database_id, status):
     model_doc = {
         "userId": user_id,
         "modelType": model_type,
+        "databaseId": database_id,
         "status": status,
         "createdAt": datetime.now(),
     }
