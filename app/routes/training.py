@@ -24,6 +24,7 @@
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from celery_worker import start_training_task
 
 router = APIRouter(prefix="/train", tags=["train"])
 
@@ -37,6 +38,9 @@ class TrainRequest(BaseModel):
     model_type: str
     parameters: dict
 
+    #field for dataset reference 
+    dataset_references: list
+
 '''
 Defines a route for starting a training process
 Takes a `TrainRequest` object as input, automatically parsed and validated by FastAPI from the JSON body of the request
@@ -44,5 +48,8 @@ Currently returns a response that includes a message and the `model_type` from t
 '''
 @router.post("/")
 async def start_training(request: TrainRequest):
+    #enqueue celery task for training
+    start_training_task.delay(request.model_type, request.parameters, request.dataset_references)
+    
     #TODO: training initiation logic based on the request data
     return {"message": "Training started", "model_type": request.model_type}
