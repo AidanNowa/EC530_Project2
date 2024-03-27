@@ -10,5 +10,14 @@ Once their model is trained, users will be able to carry out inferences with upl
 
 # Modules
 
+For the following modules, a CRUD model was followed where relevant, meaning that functions to create, read, update, and delete were implemented in modules where their functionality would be necessary.
+Current implementations for each function are placeholders as this project focused on API design rather than the functionality of the project. However, error checking and returning error codes has been implemented.
+
 ## authenticationAuthroization.py
+
+Handles user authentication and authorization processes, including user registration, login, and token refresh operations. It provides secure access control to the API, ensuring that only registered and authenticated users can perform certain actions.
+
+## dataAnalysis.py
+
+Provides functionality to perform data analysis on user-uploaded datasets. It includes an endpoint to return statistical analysis results, such as image size distribution, helping users understand their data better.
 
