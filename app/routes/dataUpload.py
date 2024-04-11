@@ -28,21 +28,38 @@ from typing import List
 from uuid import uuid4
 from dependencies import get_current_active_user
 from models import User
+import os
 
 '''
 Creates APIrouter instance which will handle routes related to file uploading
 `/upload` will be added before all routes defined in this router, now grouped under a common base path
 Tags parameter is used for grouping endpoints in the automatic documentation
 '''
+ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "application/pdf"]
+MAX_FILE_SIZE = 10 * 1024 * 1024 #10MB can be changed
+
 router = APIRouter(prefix="/upload", tags=["upload"]) 
 
 #simulated storage for file metadata
 file_metadata_db = {}
 
+#function to santize filenames
+def sanitize_filename(filename: str) -> str:
+    #remove dictory paths from filename
+    safe_filename = os.path.basename(filename)
+    #replace spaces and ..
+    safe_filename = safe_filename.replace(" ", "_").replace("..", "")
+    #truncate to a reasonable length
+    safe_filename = safe_filename[:255]
+    return safe_filename
+
 #simulated function to save files 
 async def save_file(file: UploadFile):
+    if file.content_type not in ALLOWED_FILE_TYPES:
+        raise HTTPException(status_code=400, details="File type not allowed")
     file_id = str(uuid4())
-    file_location = f"storage/{file_id}"  #simulate saving to a directory called 'storage'
+    filename = sanitize_filename(file.filename)
+    file_location = f"storage/{file_id}-{filename}"  #simulate saving to a directory called 'storage'
     with open(file_location, "wb") as buffer:
         content = await file.read()
         buffer.write(content)
@@ -53,7 +70,7 @@ Utilizes FasAPIs file upload handling
 Returns a JSON object with the filenames of the uploaded files -- placeholder
 '''
 @router.post("/") # decorator to specify this is a POST endpoint at the path `/upload/`
-async def upload_files(files: List[UploadFile] = File(...), user: User = Depends(get_current_active_user)):
+async def upload_files(files: List[UploadFile] = File(..., gt=0, lt=MAX_FILE_SIZE), user: User = Depends(get_current_active_user)):
     uploaded_files = []
     for file in files:
         file_id, filename = await save_file(file)

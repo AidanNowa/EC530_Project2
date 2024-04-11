@@ -23,13 +23,16 @@
 '''
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from typing import List
 from uuid import uuid4
 from celery.result import AsyncResult
 from celery_worker import celery_app, start_training_task
 from dependencies import get_current_active_user
 from models import User
+import os
+
+ALLOWED_FORMATS = ['.csv', '.json', '.txt'] #TODO: add more
 
 router = APIRouter(prefix="/train", tags=["train"])
 
@@ -41,11 +44,38 @@ ensures incoming requests have the correct structure and type of data
 helps with automatic request validation
 '''
 class TrainRequest(BaseModel):
-    model_type: str
-    parameters: dict
+    model_type: str = Field(..., example='CNN')
+    parameters: dict = Field(...)
 
     #field for dataset reference 
-    dataset_references: list
+    dataset_references: List[str] = Field(...)
+
+@validator('model_type')
+def model_type_must_be_known(cls, value):
+    #TODO: update with all known types
+    known_types = ["CNN", "RNN", "DNN"]
+    if value not in known_types:
+        raise ValueError(f"model_type must be one of {known_types}")
+    return value
+
+@validator('dataset_references')
+def dataset_references_must_be_valid(cls, value):
+    if not dataset_exists(value):
+        raise ValueError(f"Dataset {value} does not exist.")
+    if not is_valid_format(value):
+        raise ValueError(f"Dataset {value} is not in a valid format.")
+    return value
+
+#check if a dataset file exists at the specified path
+def dataset_exists(dataset_reference: str) -> bool:
+    base_directory = "/path/to/datasets" #TODO: get actual path not placeholder
+    dataset_path = os.path.join(base_directory, os.path.basename(dataset_reference))
+    return os.path.isfile(dataset_path)
+
+#check if the dataset's format is valid based on the file extension
+def is_valid_format(dataset_refernce: str) -> bool:
+    _, file_extension = os.path.splitext(dataset_refernce)
+    return file_extension in ALLOWED_FORMATS
 
 '''
 Defines a route for starting a training process

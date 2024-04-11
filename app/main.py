@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app import db
+import db
 from app.routes import dataUpload, training, authenticationAuthorization, dataAnalysis, inference, modelPublishing, reports, testModel
 
 app = FastAPI()

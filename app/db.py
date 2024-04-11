@@ -201,6 +201,3 @@ def update_training_job_status(job_id, status, completed_at=None):
     if completed_at:
         update["$set"]["completedAt"] = completed_at
     training_jobs_collection.update_one({"_id": job_id}, update)
-
-
-

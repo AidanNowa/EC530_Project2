@@ -26,7 +26,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, validator
+import re
 
 #define the router
 router = APIRouter(prefix="/auth")
@@ -43,9 +44,24 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  #token expiration time
 
 class User(BaseModel):
-    username: str
-    email: str
-    password: str
+    username: str = Field(..., min_length=3, max_length=20, regex="^[a-zA-Z0-9_]+$") #enfoce required min and max length and only alphanumeric values and _ 
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=20)
+
+    @validator('password')
+    def check_password_complexity(cls, v):
+        if not validate_password(v):
+            raise ValueError('Password must eet complexity requirements')
+        return v
+
+@validator('password')
+def validate_password(cls, value):
+    #enforces at least one uppercase, one lowercase, and one digit. Special characters are optional.
+    password_regex = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$"
+
+    if not re.match(password_regex, value):
+        raise ValueError('Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, and one number.')
+    return value
 
 class UserInDB(User):
     hashed_password: str
@@ -76,10 +92,21 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 @router.post("/register")
 async def register_user(user: User):
+    #validation check upon user registration
+    if not validate_password(user.password):
+        raise HTTPException(status_code=400, detail="Password does not meet complexity requirements")
+
     if user.username in fake_users_db:
         raise HTTPException(status_code=400, detail="Username already registered")
+    
     hashed_password = get_password_hash(user.password)
-    fake_users_db[user.username] = {"username": user.username, "email": user.email, "hashed_password": hashed_password}
+    fake_users_db[user.username] = {
+        "username": user.username,
+        "email": user.email,
+        "hashed_password": hashed_password
+    }
+    
+    #fake_users_db[user.username] = {"username": user.username, "email": user.email, "hashed_password": hashed_password}
     return {"message": "User successfully registered.", "username": user.username, "email": user.email}
 
 @router.post("/token")
