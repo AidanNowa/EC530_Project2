@@ -15,13 +15,18 @@ from models import User
 import uuid
 import os
 
-
 router = APIRouter(prefix="/test")
+
+def sanitize_filename(filename:str) -> str:
+    #remove any path characters from finemaes to avoid directory traversal
+    filename = filename.replace("/", "").replace("\\", "")
+    return filename
 
 #simulated function for saving uploaded test images and returning their file paths
 async def save_test_images(files: List[UploadFile]):
     file_paths = []
     for file in files:
+        filename = sanitize_filename(file.filename)
         # Create a unique filename to prevent collisions
         file_id = str(uuid.uuid4())
         file_location = f"storage/test_images/{file_id}-{file.filename}"
